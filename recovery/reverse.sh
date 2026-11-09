@@ -28,15 +28,8 @@ sed 's/output io_16_31_1)/output reg io_16_31_1)/' recovered_netlist.v \
   | sed '/^reg io_16_31_1 = 0;/d' \
   | sed -E 's/^reg (n[0-9]+);/reg \1 = 0;/' > recovered_por.v      # FFs power up to 0
 
-# iCE40 primitive models; initialise the BRAM output register (hardware = 0).
-# Locate cells_sim.v relative to the yosys install (portable), then fall back.
-YROOT="$(dirname "$(command -v yosys 2>/dev/null)")/.."
-CELLS=$(find "$YROOT" -path '*ice40*cells_sim.v' 2>/dev/null | head -1)
-[ -z "$CELLS" ] && CELLS=$(find "${OSS_ROOT:-/c/oss-cad-suite}" -path '*ice40*cells_sim.v' 2>/dev/null | head -1)
+# iCE40 primitive models; initialise the BRAM output register (hardware = 0)
+CELLS=$(find "${OSS_ROOT:-/c/oss-cad-suite}" -path '*ice40*cells_sim.v' 2>/dev/null | head -1)
 cp "$CELLS" cells_sim.v
-sed -i 's/\treg  \[15:0\] RDATA_I;/\treg  [15:0] RDATA_I = 0;/' cells_sim.v
-
-# White-box key evidence: the 256-byte S-box straight out of the first BRAM.
-grep -m1 -A17 'SB_RAM40_4K #' recovered_netlist.v | grep INIT > sbox_bram_init.txt || true
-
+sed -i '' 's/\treg  \[15:0\] RDATA_I;/\treg  [15:0] RDATA_I = 0;/' cells_sim.v
 echo "Done. Recovered netlist ready (recovered_por.v)."
